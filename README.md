@@ -18,3 +18,10 @@ agentic-ai-sec-lab/
 ├── config.yaml           # Security thresholds & configurations
 ├── requirements.txt      # Project dependencies
 └── README.md
+
+## 🚀 Quickstart & Usage
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/JoieC-GRC-Analyst/agentic-ai-sec-lab.git](https://github.com/JoieC-GRC-Analyst/agentic-ai-sec-lab.git)
+   cd agentic-ai-sec-lab
