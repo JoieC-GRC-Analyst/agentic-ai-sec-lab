@@ -46,7 +46,7 @@ Verify that all security guardrails, allowlists, and schema constraints pass uni
 ```bash
 python3 -m unittest discover -s tests -p "test_*.py"
 ```
-*(Expected output: )*
+*(Expected output: Ran 4 tests in 0.00x s — OK)*
 
 ### 3. Execute the Security Simulation Pipeline
 Run the orchestrator to test adversarial inputs, unauthorized actions, and generate raw audit telemetry:
