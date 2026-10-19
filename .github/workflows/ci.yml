@@ -1,30 +1,73 @@
-name: Agentic AI Security CI
+name: AI-GRC Lab CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   validate-lab:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-        cache: 'pip'
+        python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pydantic
 
-    - name: Run security pipeline validation
+    - name: Run Unit Regression Test Suite
+      env:
+        PYTHONPATH: .
       run: |
-        python3 src/run_pipeline.py
+        python -m unittest discover -s tests -p "test_*.py"
+
+    - name: Execute Security Simulation Pipeline (Normal Path)
+      env:
+        PYTHONPATH: .
+      run: |
+        python -m src.run_pipeline
+
+    - name: Generate Executive Assurance Report (Normal Path)
+      env:
+        PYTHONPATH: .
+      run: |
+        python -m src.generate_report
+
+    - name: Verify Artifacts and Report Integrity (Normal Path)
+      run: |
+        test -f artifacts/demo_report.json
+        test -f artifacts/executive_summary.md
+        grep -q "Overall Posture Status.*PASS" artifacts/executive_summary.md
+        if grep -q "VERIFIED & COMPLIANT" artifacts/executive_summary.md; then
+          echo "Error: Unconditional compliance claim found."
+          exit 1
+        fi
+
+    - name: Verify Failure Path Detection and Evidence Persistence
+      env:
+        PYTHONPATH: .
+      run: |
+        set +e
+        python -m src.run_pipeline --inject-failure
+        rc=$?
+        set -e
+        if [ "$rc" -ne 1 ]; then
+          echo "Error: expected exit code 1, got $rc"
+          exit 1
+        fi
+        echo "Success: expected failure detected (exit code 1)."
+
+        test -f artifacts/demo_report.json
+        python3 -c "import json; data = json.load(open('artifacts/demo_report.json')); assert data['summary']['overall_status'] == 'FAIL'; assert data['test_results'][0]['gateway_decision'] == 'ALLOWED'; assert data['test_results'][0]['observed_decision'] == 'BLOCKED'"
+
+        python -m src.generate_report
+        grep -q "Overall Posture Status.*FAIL" artifacts/executive_summary.md
+        grep -q "Test Harness Override" artifacts/executive_summary.md
